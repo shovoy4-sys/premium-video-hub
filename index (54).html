@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🎬 CINEMA PREMIUM • 4K STREAM</title>
+    
+    <!-- Telegram WebApp & Adsgram Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            color: #f0f0f0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800;14..32,900&display=swap');
+
+        .app-container {
+            max-width: 560px;
+            margin: 0 auto;
+            background: linear-gradient(145deg, #0e0e16 0%, #07070c 100%);
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        /* --- VERIFICATION OVERLAY (CINEMA TICKET STYLE) --- */
+        .verify-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 30% 20%, #0f0c1f, #020105);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            backdrop-filter: blur(16px);
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        .verify-overlay.hide {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .cinema-ticket {
+            background: linear-gradient(145deg, #181a2a, #0c0d18);
+            border-radius: 64px;
+            padding: 48px 32px;
+            text-align: center;
+            max-width: 380px;
+            width: 88%;
+            border: 1px solid rgba(255, 100, 180, 0.5);
+            box-shadow: 0 0 50px rgba(255, 60, 120, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .cinema-ticket::after {
+            content: "🎟️";
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 55px;
+            opacity: 0.2;
+            transform: rotate(-15deg);
+        }
+        .movie-icon {
+            font-size: 72px;
+            filter: drop-shadow(0 0 15px #ff3388);
+            margin-bottom: 12px;
+        }
+        .cinema-ticket h2 {
+            font-size: 32px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #FFB347, #FF6B8B);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .watch-video-btn {
+            background: linear-gradient(105deg, #e63946, #ff6b4a);
+            border: none;
+            padding: 16px 38px;
+            border-radius: 60px;
+            font-size: 20px;
+            font-weight: 800;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 10px 25px #ff3b6f70;
+            margin-top: 12px;
+        }
+        .watch-video-btn:active { transform: scale(0.96); }
+        .watch-video-btn:disabled { opacity: 0.6; }
+
+        /* Loading overlay cinematic */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000000cc;
+            backdrop-filter: blur(16px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .loading-overlay.show { display: flex; }
+        .film-spinner {
+            width: 70px;
+            height: 70px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23ff6b8b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16"/><path d="M16 4v16"/><path d="M2 8h4"/><path d="M2 12h4"/><path d="M2 16h4"/><path d="M18 8h4"/><path d="M18 12h4"/><path d="M18 16h4"/></svg>') no-repeat center;
+            background-size: contain;
+            animation: spinReel 1.2s infinite;
+        }
+        @keyframes spinReel { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .content-hidden { display: none; }
+
+        /* HEADER - STREAMING STYLE */
+        .stream-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 20px 12px;
+            background: rgba(8, 8, 16, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 70, 120, 0.4);
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+        .logo-premium {
+            font-weight: 900;
+            font-size: 20px;
+            background: linear-gradient(135deg, #F9D976, #F39F86, #FF6B8B);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .badge-4k {
+            background: rgba(0,0,0,0.6);
+            border-radius: 30px;
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: 800;
+            border: 1px solid #ff6b8b;
+            color: #ff9eb5;
+        }
+
+        /* Hero spotlight (featured movie) */
+        .featured-movie {
+            margin: 18px 20px 24px;
+            border-radius: 36px;
+            overflow: hidden;
+            background: #11101c;
+            border: 1px solid rgba(255, 80, 120, 0.6);
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 20px 30px -12px black;
+        }
+        .featured-img {
+            position: relative;
+            height: 240px;
+            overflow: hidden;
+        }
+        .featured-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(14px) brightness(0.75);
+            transition: 0.3s;
+        }
+        .featured-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .play-circle {
+            font-size: 70px;
+            filter: drop-shadow(0 0 18px #ff3b6f);
+            background: rgba(0,0,0,0.5);
+            border-radius: 100px;
+            padding: 10px;
+            backdrop-filter: blur(5px);
+        }
+        .featured-title {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-top: 12px;
+            background: linear-gradient(135deg, #FFF, #FFB6C1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .movie-meta {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 18px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(12px);
+            font-weight: 600;
+            font-size: 13px;
+            color: #ffd0dd;
+        }
+
+        /* category scroll */
+        .cat-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 8px 20px 20px;
+            scrollbar-width: thin;
+        }
+        .cat-item {
+            background: rgba(30, 28, 45, 0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 50px;
+            padding: 10px 24px;
+            font-weight: 700;
+            font-size: 14px;
+            white-space: nowrap;
+            border: 1px solid #ff5f8e;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .cat-item:active { transform: scale(0.96); background: #ff3b6f30; }
+
+        /* section header */
+        .section-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 28px 20px 16px;
+        }
+        .section-row h3 {
+            font-size: 20px;
+            font-weight: 800;
+            border-left: 5px solid #ff5f8e;
+            padding-left: 12px;
+        }
+        .see-all {
+            font-size: 13px;
+            color: #ff9bb5;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* MOVIE GRID (modern cinema cards) */
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 0 20px;
+        }
+        .movie-card {
+            background: rgba(18, 17, 28, 0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 100, 140, 0.3);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .movie-card:active { transform: scale(0.97); background: #201e34; }
+        .card-media {
+            position: relative;
+            height: 140px;
+        }
+        .card-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(12px);
+        }
+        .card-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: linear-gradient(145deg, #ff3366, #ff884d);
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+        .card-info {
+            padding: 14px 12px 12px;
+        }
+        .card-title {
+            font-weight: 800;
+            display: flex;
+            justify-content: space-between;
+        }
+        .card-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #bbaad0;
+        }
+
+        /* VIP CINEMA PASS */
+        .vip-pass {
+            background: linear-gradient(115deg, #1a142f, #0f0b1f);
+            margin: 32px 20px;
+            border-radius: 48px;
+            padding: 24px 20px;
+            border: 2px solid #ffbc6e;
+            cursor: pointer;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .pass-glow {
+            font-size: 34px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #FEE190, #FFB347, #FF6B8B);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Live now double */
+        .live-row {
+            display: flex;
+            gap: 18px;
+            margin: 0 20px 30px;
+        }
+        .live-card {
+            flex: 1;
+            background: #131129;
+            border-radius: 32px;
+            padding: 12px;
+            border: 1px solid #ff678a;
+            cursor: pointer;
+        }
+        .live-preview {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 24px;
+            filter: blur(9px);
+        }
+        .live-badge-red {
+            background: #e02b4b;
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-top: 8px;
+        }
+
+        /* Hot links (cinema extra) */
+        .hot-links-cinema {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin: 30px 20px 25px;
+        }
+        .hot-cinema {
+            flex: 1 1 42%;
+            background: #15122a;
+            padding: 16px 8px;
+            border-radius: 44px;
+            text-align: center;
+            font-weight: 700;
+            border-bottom: 4px solid #ff7b9c;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        /* special cards */
+        .double-special {
+            display: flex;
+            gap: 18px;
+            margin: 20px 20px 30px;
+        }
+        .special-offer {
+            flex: 1;
+            background: #120f22;
+            border-radius: 36px;
+            padding: 20px 12px;
+            text-align: center;
+            border: 1px solid #ff7b9c;
+            cursor: pointer;
+        }
+        .footer-cinema {
+            text-align: center;
+            padding: 28px;
+            background: #0a0914;
+            border-top: 1px solid #ff608030;
+            font-size: 11px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <!-- Verification Overlay (Movie Ticket) -->
+    <div class="verify-overlay" id="verifyOverlay">
+        <div class="cinema-ticket">
+            <div class="movie-icon">🎬🍿</div>
+            <h2>WATCH TRAILER<br> & UNLOCK</h2>
+            <p style="color:#bbb; margin: 15px 0;">১৮+ ভিডিও দেখতে নিচের বাটনে ক্লিক করুন<br>স্ট্রিমিং আনলক করুন</p>
+            <button class="watch-video-btn" id="watchVideoBtn">
+                🎞️ WATCH & STREAM
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="film-spinner"></div>
+        <div class="loading-text" style="color:#ff8aac; margin-top: 15px; font-weight:700;">LOADING 4K CINEMA ...</div>
+    </div>
+
+    <div class="content-hidden" id="mainContent">
+        <!-- Header -->
+        <div class="stream-header">
+            <div class="logo-premium">🎥 CINEMA<span style="color:#ff6b8b;"> PREMIUM</span></div>
+            <div class="badge-4k">4K ULTRA HD</div>
+        </div>
+
+        <!-- Featured Movie Hero -->
+        <div class="featured-movie" id="heroBlur">
+            <div class="featured-img">
+                <img src="https://i.ibb.co.com/Xk6JGmP6/dark-theme-of-video-player-window-in-a-night-mode.jpg" alt="featured" onerror="this.src='https://placehold.co/600x400/1e1a2e/ff88aa?text=PREMIERE'">
+                <div class="featured-overlay">
+                    <div class="play-circle">▶</div>
+                    <div class="featured-title">NOW STREAMING</div>
+                </div>
+                <div class="movie-meta" id="heroStats">
+                    <span>🔥 <span id="heroViews">৪.১</span>M views</span>
+                    <span>⭐ <span id="heroLikes">৮৫২</span>K</span>
+                    <span>💬 <span id="heroComments">২১৪</span>K</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories like movie genres -->
+        <div class="cat-scroll">
+            <div class="cat-item" id="pill1">🎬 ACTION</div>
+            <div class="cat-item" id="pill2">🔥 BOLLYWOOD</div>
+            <div class="cat-item" id="pill3">💋 ROMANCE 18+</div>
+            <div class="cat-item" id="pill4">🎥 EXCLUSIVE</div>
+            <div class="cat-item" id="pill5">🌙 WEBCAM</div>
+            <div class="cat-item" id="pill6">📀 4K COLLECTION</div>
+        </div>
+
+        <!-- Trending Movies Section -->
+        <div class="section-row">
+            <h3>⚡ TRENDING NOW</h3>
+            <span class="see-all" id="viewAllTrending">ALL MOVIES ›</span>
+        </div>
+        <div class="movie-grid" id="trendingGrid">
+            <div class="movie-card" id="trend1" data-link="https://t.me/gorommoslabot?startapp">
+                <div class="card-media"><img src="https://i.imgur.com/5vzBNBz.jpeg"><span class="card-badge">HDR</span></div>
+                <div class="card-info"><div class="card-title"><span>🔞 College Diaries</span><span>★ <span class="rating1">4.8</span></span></div><div class="card-stats"><span>👁 <span class="view1">৭৮৯</span>K</span><span>❤️ <span class="like1">৫৬</span>K</span><span>💬 <span class="comment1">২৩</span>K</span></div></div>
+            </div>
+            <div class="movie-card" id="trend2" data-link="https://t.me/khelahobe07_bot?startapp">
+                <div class="card-media"><img src="https://i.imgur.com/ZnFW6E2.jpeg"><span class="card-badge">NEW</span></div>
+                <div class="card-info"><div class="card-title"><span>💋 Wedding Night</span><span>★ <span class="rating2">4.9</span></span></div><div class="card-stats"><span>👁 <span class="view2">১.২</span>M</span><span>❤️ <span class="like2">৮৯</span>K</span><span>💬 <span class="comment2">৪৫</span>K</span></div></div>
+            </div>
+            <div class="movie-card" id="trend3" data-link="https://t.me/gorommoslabot?startapp">
+                <div class="card-media"><img src="https://i.imgur.com/UiW5o8Z.jpeg"><span class="card-badge">VIRAL</span></div>
+                <div class="card-info"><div class="card-title"><span>👄 Hotel Room</span><span>★ <span class="rating3">4.7</span></span></div><div class="card-stats"><span>👁 <span class="view3">৫৬৫</span>K</span><span>❤️ <span class="like3">৪২</span>K</span><span>💬 <span class="comment3">১৮</span>K</span></div></div>
+            </div>
+            <div class="movie-card" id="trend4" data-link="https://t.me/khelahobe07_bot?startapp">
+                <div class="card-media"><img src="https://i.imgur.com/R0XQv0T.jpeg"><span class="card-badge">EXCLUSIVE</span></div>
+                <div class="card-info"><div class="card-title"><span>🎭 Secretary Affair</span><span>★ <span class="rating4">4.9</span></span></div><div class="card-stats"><span>👁 <span class="view4">৯৯২</span>K</span><span>❤️ <span class="like4">৭৩</span>K</span><span>💬 <span class="comment4">৩১</span>K</span></div></div>
+            </div>
+            <div class="movie-card" id="trend5" data-link="https://t.me/gorommoslabot?startapp">
+                <div class="card-media"><img src="https://i.imgur.com/sG7QqGh.jpeg"><span class="card-badge">HOT</span></div>
+                <div class="card-info"><div class="card-title"><span>💦 Massage Center</span><span>★ <span class="rating5">4.6</span></span></div><div class="card-stats"><span>👁 <span class="view5">৩৪৫</span>K</span><span>❤️ <span class="like5">২৮</span>K</span><span>💬 <span class="comment5">১২</span>K</span></div></div>
+            </div>
+            <div class="movie-card" id="trend6" data-link="https://t.me/khelahobe07_bot?startapp">
+                <div class="card-media"><img src="https://i.imgur.com/KLh6VhO.jpeg"><span class="card-badge">ULTRA 4K</span></div>
+                <div class="card-info"><div class="card-title"><span>👙 Hostel Nights</span><span>★ <span class="rating6">4.8</span></span></div><div class="card-stats"><span>👁 <span class="view6">৮৮২</span>K</span><span>❤️ <span class="like6">৬৪</span>K</span><span>💬 <span class="comment6">২৭</span>K</span></div></div>
+            </div>
+        </div>
+
+        <!-- VIP Cinema Pass -->
+        <div class="vip-pass" id="vipBanner" data-link="https://t.me/gorommoslabot?startapp">
+            <span style="background:#f5b64240; padding:6px 18px; border-radius:40px; font-size:12px;">⭐ LIMITED PASS</span>
+            <div class="pass-glow" style="margin:16px 0;">UNLIMITED CINEMA PASS</div>
+            <div style="background: #00000060; border-radius: 40px; padding:12px; font-weight:800;">🚀 80% OFF — JOIN TODAY</div>
+            <p style="margin-top:14px; font-size:12px;" id="vipViewer">১২.৪K members joined</p>
+        </div>
+
+        <!-- Live Now Section -->
+        <div class="section-row"><h3>🔴 LIVE NOW</h3><span class="see-all" id="viewAllLive">ALL STREAMS ›</span></div>
+        <div class="live-row">
+            <div class="live-card" id="live1" data-link="https://t.me/khelahobe07_bot?startapp">
+                <img class="live-preview" src="https://i.imgur.com/jUvXU8r.jpeg">
+                <div class="live-badge-red">🔴 LIVE</div>
+                <p style="font-weight:800; margin-top:10px;">Hot Jessica</p>
+                <div style="display:flex; justify-content:space-between;"><span id="live1Viewers">২.৮K watching</span><span>❤️ <span id="live1Likes">১২.৪</span>K</span></div>
+            </div>
+            <div class="live-card" id="live2" data-link="https://t.me/gorommoslabot?startapp">
+                <img class="live-preview" src="https://i.imgur.com/JH1cVWv.jpeg">
+                <div class="live-badge-red">🔴 LIVE</div>
+                <p style="font-weight:800; margin-top:10px;">Priya X</p>
+                <div style="display:flex; justify-content:space-between;"><span id="live2Viewers">১.৯K watching</span><span>❤️ <span id="live2Likes">৮.৭</span>K</span></div>
+            </div>
+        </div>
+
+        <!-- Hot Links (Cinema Extras) -->
+        <div class="hot-links-cinema">
+            <div class="hot-cinema" id="hotlink1" data-link="https://t.me/gorommoslabot?startapp">🎞️ PRIVATE COLLECTION</div>
+            <div class="hot-cinema" id="hotlink2" data-link="https://t.me/khelahobe07_bot?startapp">📹 REQUEST MOVIE</div>
+            <div class="hot-cinema" id="hotlink3" data-link="https://t.me/f785OSC7KPk4MGJl4abot?startapp">🎧 AUDIO CLIPS</div>
+            <div class="hot-cinema" id="hotlink4" data-link="https://t.me/khelahobe07_bot?startapp">📸 EXCLUSIVE PHOTOS</div>
+            <div class="hot-cinema" id="hotlink5" data-link="https://t.me/gorommoslabot?startapp">🎮 INTERACTIVE</div>
+            <div class="hot-cinema" id="hotlink6" data-link="https://t.me/gorommoslabot?startapp">💎 VIP GROUP</div>
+        </div>
+
+        <!-- Special Offers -->
+        <div class="double-special">
+            <div class="special-offer" id="special1" data-link="https://t.me/khelahobe07_bot?startapp"><span style="font-size:34px;">🎁</span><h3 style="margin:10px 0;">FREE TRIAL</h3><span id="trialTimer">24h left</span></div>
+            <div class="special-offer" id="special2" data-link="https://t.me/gorommoslabot?startapp"><span style="font-size:34px;">💘</span><h3 style="margin:10px 0;">MATCH & DATE</h3><span id="matchCount">১২৩ online</span></div>
+        </div>
+
+        <div class="footer-cinema">
+            🎬 18+ CINEMA PREMIUM • 4K STREAMING<br>
+            <span style="color:#ff7b9c;">UNLIMITED ACCESS | HD QUALITY</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const DEFAULT_AD_LINK = "https://t.me/gorommoslabot?startapp";
+    const verifyOverlay = document.getElementById('verifyOverlay');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const mainContent = document.getElementById('mainContent');
+    let verificationDone = false;
+
+    function showAdsgramAd(redirectUrl) {
+        return new Promise((resolve) => {
+            if (typeof Adsgram === 'undefined') {
+                console.warn("Adsgram not loaded");
+                resolve(true);
+                return;
+            }
+            try {
+                const AdController = Adsgram.init({ blockId: "int-25417" });
+                AdController.show().then(() => resolve(true)).catch(() => resolve(true));
+            } catch(e) { resolve(true); }
+        });
+    }
+
+    async function handleElementClick(event, redirectUrl) {
+        if (!verificationDone) { alert("বিডিও দেখার জন্য 'ওয়াচ নাও' বাটনে ক্লিক করুন!"); return; }
+        event.stopPropagation();
+        const finalUrl = redirectUrl || DEFAULT_AD_LINK;
+        loadingOverlay.classList.add('show');
+        await showAdsgramAd(finalUrl);
+        loadingOverlay.classList.remove('show');
+        window.location.href = finalUrl;
+    }
+
+    async function handleWatchVideoClick() {
+        const btn = document.getElementById('watchVideoBtn');
+        btn.disabled = true;
+        btn.innerHTML = '⏳ LOADING...';
+        loadingOverlay.classList.add('show');
+        await showAdsgramAd(null);
+        loadingOverlay.classList.remove('show');
+        verificationDone = true;
+        verifyOverlay.classList.add('hide');
+        mainContent.classList.remove('content-hidden');
+        generateRealisticStats();
+        startAutoStatsUpdate();
+        attachAllListeners();
+    }
+
+    function attachAllListeners() {
+        const hero = document.getElementById('heroBlur');
+        if(hero) hero.addEventListener('click', (e) => handleElementClick(e, DEFAULT_AD_LINK));
+        const pills = ['pill1','pill2','pill3','pill4','pill5','pill6'];
+        pills.forEach(p => { const el = document.getElementById(p); if(el) el.addEventListener('click',(e)=>handleElementClick(e, DEFAULT_AD_LINK)); });
+        const trends = ['trend1','trend2','trend3','trend4','trend5','trend6'];
+        trends.forEach(t => { const el = document.getElementById(t); if(el) { const link = el.getAttribute('data-link') || DEFAULT_AD_LINK; el.addEventListener('click',(e)=>handleElementClick(e, link)); } });
+        document.getElementById('viewAllTrending')?.addEventListener('click',(e)=>handleElementClick(e, DEFAULT_AD_LINK));
+        document.getElementById('viewAllLive')?.addEventListener('click',(e)=>handleElementClick(e, DEFAULT_AD_LINK));
+        const vip = document.getElementById('vipBanner');
+        if(vip) vip.addEventListener('click',(e)=>handleElementClick(e, DEFAULT_AD_LINK));
+        const live1 = document.getElementById('live1'), live2 = document.getElementById('live2');
+        if(live1) { const link = live1.getAttribute('data-link')||DEFAULT_AD_LINK; live1.addEventListener('click',(e)=>handleElementClick(e, link)); }
+        if(live2) { const link = live2.getAttribute('data-link')||DEFAULT_AD_LINK; live2.addEventListener('click',(e)=>handleElementClick(e, link)); }
+        const hotlinks = ['hotlink1','hotlink2','hotlink3','hotlink4','hotlink5','hotlink6'];
+        hotlinks.forEach(h => { const el = document.getElementById(h); if(el) { const link = el.getAttribute('data-link')||DEFAULT_AD_LINK; el.addEventListener('click',(e)=>handleElementClick(e, link)); } });
+        const specials = ['special1','special2'];
+        specials.forEach(s => { const el = document.getElementById(s); if(el) { const link = el.getAttribute('data-link')||DEFAULT_AD_LINK; el.addEventListener('click',(e)=>handleElementClick(e, link)); } });
+    }
+
+    function generateRealisticStats() {
+        try {
+            if(document.getElementById('heroViews')) document.getElementById('heroViews').innerHTML = (Math.random() * 2 + 3.5).toFixed(1);
+            if(document.getElementById('heroLikes')) document.getElementById('heroLikes').innerHTML = Math.floor(Math.random() * 300 + 650);
+            if(document.getElementById('heroComments')) document.getElementById('heroComments').innerHTML = Math.floor(Math.random() * 100 + 180);
+            const views = ['.view1','.view2','.view3','.view4','.view5','.view6'];
+            const likes = ['.like1','.like2','.like3','.like4','.like5','.like6'];
+            const comments = ['.comment1','.comment2','.comment3','.comment4','.comment5','.comment6'];
+            const ratings = ['.rating1','.rating2','.rating3','.rating4','.rating5','.rating6'];
+            for(let i=0;i<views.length;i++){
+                document.querySelector(views[i]) && (document.querySelector(views[i]).innerHTML = Math.floor(Math.random() * 400 + 550));
+                document.querySelector(likes[i]) && (document.querySelector(likes[i]).innerHTML = Math.floor(Math.random() * 60 + 35));
+                document.querySelector(comments[i]) && (document.querySelector(comments[i]).innerHTML = Math.floor(Math.random() * 35 + 18));
+                document.querySelector(ratings[i]) && (document.querySelector(ratings[i]).innerHTML = (Math.random() * 0.5 + 4.5).toFixed(1));
+            }
+            if(document.getElementById('live1Viewers')) document.getElementById('live1Viewers').innerHTML = (Math.random() * 2 + 1.8).toFixed(1)+'K watching';
+            if(document.getElementById('live1Likes')) document.getElementById('live1Likes').innerHTML = (Math.random() * 5 + 10).toFixed(1);
+            if(document.getElementById('live2Viewers')) document.getElementById('live2Viewers').innerHTML = (Math.random() * 1.8 + 1.2).toFixed(1)+'K watching';
+            if(document.getElementById('live2Likes')) document.getElementById('live2Likes').innerHTML = (Math.random() * 4 + 7).toFixed(1);
+            const vipViews = Math.floor(Math.random() * 8000 + 10000);
+            if(document.getElementById('vipViewer')) document.getElementById('vipViewer').innerHTML = `${vipViews.toLocaleString()} members joined`;
+            const hrs = Math.floor(Math.random() * 12 + 18);
+            if(document.getElementById('trialTimer')) document.getElementById('trialTimer').innerHTML = `${hrs} hours left`;
+            const matchOnline = Math.floor(Math.random() * 250 + 100);
+            if(document.getElementById('matchCount')) document.getElementById('matchCount').innerHTML = `${matchOnline} online`;
+        } catch(e){}
+    }
+    function startAutoStatsUpdate(){ setInterval(generateRealisticStats, 5500); }
+    document.getElementById('watchVideoBtn').addEventListener('click', handleWatchVideoClick);
+</script>
+</body>
+</html>
